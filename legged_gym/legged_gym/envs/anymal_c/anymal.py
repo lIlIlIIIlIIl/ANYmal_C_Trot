@@ -135,8 +135,8 @@ class Anymal(LeggedRobot):
         swing_reward_LFRH = swing_active_LFRH * (-1) * ((left_front_foot_forces + right_hind_foot_forces) / 2)
 
         # Rewards for stance and swing phases (RFLH)
-        stance_reward_RFLH = stance_active_RFLH * (-1) * ((right_front_foot_speeds + left_front_foot_speeds) / 2)
-        swing_reward_RFLH = swing_active_RFLH * (-1) * ((right_front_foot_forces + left_front_foot_forces) / 2)
+        stance_reward_RFLH = stance_active_RFLH * (-1) * ((right_front_foot_speeds + left_hind_foot_speeds) / 2)
+        swing_reward_RFLH = swing_active_RFLH * (-1) * ((right_front_foot_forces + left_hind_foot_forces) / 2)
 
         # Combine rewards
         total_reward = stance_reward_LFRH+ swing_reward_LFRH + stance_reward_RFLH + swing_reward_RFLH
