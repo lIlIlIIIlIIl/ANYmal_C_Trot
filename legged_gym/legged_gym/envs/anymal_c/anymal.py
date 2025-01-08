@@ -140,6 +140,7 @@ class Anymal(LeggedRobot):
 
         # Combine rewards
         total_reward = stance_reward_LFRH+ swing_reward_LFRH + stance_reward_RFLH + swing_reward_RFLH
+
         return total_reward
 
         
