@@ -1,0 +1,3 @@
+python play.py --task=anymal_c_flat --load_run=/home/sunghyunpark/legged_gym/logs/flat_anymal_c/Jan03_16-38-58_ --num_envs=1
+python train.py --task=anymal_c_flat --headless
+
