@@ -142,6 +142,7 @@ class AnymalCFlatCfg(AnymalCRoughCfg):
 
     class rewards(AnymalCRoughCfg.rewards):
         max_contact_force = 350.
+        only_positive_rewards = False
 
         class scales(AnymalCRoughCfg.rewards.scales):
             orientation = -5.0

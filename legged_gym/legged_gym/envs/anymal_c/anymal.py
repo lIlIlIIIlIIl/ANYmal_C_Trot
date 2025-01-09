@@ -100,22 +100,29 @@ class Anymal(LeggedRobot):
             return p_active
 
             # Compute probabilities for left and right feet
-        swing_active_LFRH = compute_phase_probability(phi, theta_LFRH)
-        swing_active_RFLH = compute_phase_probability(phi, theta_RFLH)
+        swing_active_left_front = compute_phase_probability(phi, theta_LFRH)
+        swing_active_right_hind = compute_phase_probability(phi, theta_LFRH)
+        swing_active_right_front = compute_phase_probability(phi, theta_RFLH)
+        swing_active_left_hind = compute_phase_probability(phi, theta_RFLH)
 
-        stance_active_LFRH = 1.0 - swing_active_LFRH
-        stance_active_RFLH = 1.0 - swing_active_RFLH
+        stance_active_left_front = 1.0 - swing_active_left_front
+        stance_active_right_hind = 1.0 - swing_active_right_hind
+        stance_active_right_front = 1.0 - swing_active_right_front
+        stance_active_left_hind = 1.0 - swing_active_left_hind
 
-        return swing_active_LFRH, swing_active_RFLH, stance_active_LFRH, stance_active_RFLH
+        return (swing_active_left_front, swing_active_right_hind, swing_active_right_front, swing_active_left_hind,
+                stance_active_left_front, stance_active_right_hind, stance_active_right_front, stance_active_left_hind)
 
     def _reward_synchronous(self):
-        swing_active_LFRH, swing_active_RFLH, stance_active_LFRH, stance_active_RFLH = self._get_phase_state()
-        phase_sync_reward = (1.0 - torch.abs(swing_active_LFRH - swing_active_RFLH)) + (1.0 - torch.abs(stance_active_LFRH - stance_active_RFLH))
+        swing_active_left_front, swing_active_right_hind, swing_active_right_front, swing_active_left_hind, stance_active_left_front, stance_active_right_hind, stance_active_right_front, stance_active_left_hind = self._get_phase_state()
+        lfrh = 1.0 - torch.abs(swing_active_left_front - swing_active_right_hind)
+        rflh = 1.0 - torch.abs(swing_active_right_front - swing_active_left_hind)
+        phase_sync_reward = lfrh + rflh
         return phase_sync_reward
 
     def _reward_phase(self):
         # Get phase activity for LFRH and RFLH
-        swing_active_LFRH, swing_active_RFLH, stance_active_LFRH, stance_active_RFLH = self._get_phase_state()
+        swing_active_left_front, swing_active_right_hind, swing_active_right_front, swing_active_left_hind, stance_active_left_front, stance_active_right_hind, stance_active_right_front, stance_active_left_hind = self._get_phase_state()
 
         # Contact forces and speeds for each foot
         left_front_foot_forces = self.contact_forces[:, self.feet_indices[0], 2]
@@ -131,15 +138,19 @@ class Anymal(LeggedRobot):
 
 
         # Rewards for stance and swing phases (LFRH)
-        stance_reward_LFRH = stance_active_LFRH * (-1) * ((left_front_foot_speeds + right_hind_foot_speeds) / 2)
-        swing_reward_LFRH = swing_active_LFRH * (-1) * ((left_front_foot_forces + right_hind_foot_forces) / 2)
+        stance_reward_left_front = stance_active_left_front * (-1) * left_front_foot_speeds
+        stance_reward_right_hind = stance_active_right_hind * (-1) * right_hind_foot_speeds
+        swing_reward_left_front = swing_active_left_front * (-1) * left_front_foot_forces
+        swing_reward_right_hind = swing_active_right_hind * (-1) * right_hind_foot_forces
 
         # Rewards for stance and swing phases (RFLH)
-        stance_reward_RFLH = stance_active_RFLH * (-1) * ((right_front_foot_speeds + left_hind_foot_speeds) / 2)
-        swing_reward_RFLH = swing_active_RFLH * (-1) * ((right_front_foot_forces + left_hind_foot_forces) / 2)
+        stance_reward_right_front = stance_active_right_front * (-1) * right_front_foot_speeds
+        stance_reward_left_hind = stance_active_left_hind * (-1) * left_hind_foot_speeds
+        swing_reward_right_front = swing_active_right_front * (-1) * right_front_foot_forces
+        swing_reward_left_hind = swing_active_left_hind * (-1) * left_hind_foot_forces
 
         # Combine rewards
-        total_reward = stance_reward_LFRH+ swing_reward_LFRH + stance_reward_RFLH + swing_reward_RFLH
+        total_reward = stance_reward_left_front + stance_reward_right_hind + swing_reward_left_front + swing_reward_right_hind + stance_reward_right_front + stance_reward_left_hind + swing_reward_right_front + swing_reward_left_hind
 
         return total_reward
 
