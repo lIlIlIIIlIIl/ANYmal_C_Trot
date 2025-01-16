@@ -99,30 +99,43 @@ class AnymalCFlatCfg(AnymalCRoughCfg):
          [0., 0., 0.],
          [0., 0., 0.]]], device='cuda:0')
          
-         dof_list = [   "LF_HAA",
-                        "LF_HFE",
-                        "LF_KFE",
+         dof_list = [   'LF_HAA', 'LF_HFE', 'LF_KFE', 
+                        'LH_HAA', 'LH_HFE', 'LH_KFE', 
+                        'RF_HAA', 'RF_HFE', 'RF_KFE', 
+                        'RH_HAA', 'RH_HFE', 'RH_KFE']
                         
-                        "RF_HAA",
-                        "RF_HFE",
-                        "RF_KFE",
-                        
-                        "LH_HAA",
-                        "LH_HFE",
-                        "LH_KFE",
-                        
-                        "RH_HAA",
-                        "RH_HFE",
-                        "RH_KFE"
-                    ]
+         body_names = [  'base', 'LF_HAA', 'LF_HIP', 'LF_hip_fixed', 
+                        'LF_HFE', 'LF_THIGH', 'LF_thigh_fixed', 'LF_KFE', 
+                        'LF_SHANK', 'LF_shank_fixed', 'LF_FOOT', 'LH_HAA', 
+                        'LH_HIP', 'LH_hip_fixed', 'LH_HFE', 'LH_THIGH', 
+                        'LH_thigh_fixed', 'LH_KFE', 'LH_SHANK', 'LH_shank_fixed', 
+                        'LH_FOOT', 'RF_HAA', 'RF_HIP', 'RF_hip_fixed', 
+                        'RF_HFE', 'RF_THIGH', 'RF_thigh_fixed', 'RF_KFE', 
+                        'RF_SHANK', 'RF_shank_fixed', 'RF_FOOT', 'RH_HAA', 
+                        'RH_HIP', 'RH_hip_fixed', 'RH_HFE', 'RH_THIGH', 
+                        'RH_thigh_fixed', 'RH_KFE', 'RH_SHANK', 'RH_shank_fixed', 
+                        'RH_FOOT', 'battery', 'bottom_shell', 'face_front', 
+                        'depth_camera_front_camera', 'depth_camera_front_camera_parent', 'depth_camera_front_color_frame', 
+                        'depth_camera_front_color_optical_frame', 'depth_camera_front_depth_optical_frame', 'wide_angle_camera_front_camera',
+                        'wide_angle_camera_front_camera_parent', 'face_rear', 'depth_camera_rear_camera', 'depth_camera_rear_camera_parent', 
+                        'depth_camera_rear_color_frame', 'depth_camera_rear_color_optical_frame', 'depth_camera_rear_depth_optical_frame', 
+                        'wide_angle_camera_rear_camera', 'wide_angle_camera_rear_camera_parent', 'handle', 'hatch', 'remote', 'depth_camera_left_camera', 
+                        'depth_camera_left_camera_parent', 'depth_camera_left_color_frame', 'depth_camera_left_color_optical_frame', 'depth_camera_left_depth_optical_frame', 
+                        'depth_camera_right_camera', 'depth_camera_right_camera_parent', 'depth_camera_right_color_frame', 'depth_camera_right_color_optical_frame', 
+                        'depth_camera_right_depth_optical_frame', 'docking_hatch_cover', 'lidar_cage', 'lidar', 'top_shell', 'imu_link'
+                            ]
 
-         body_names = ['LF_FOOT','RF_FOOT','LH_FOOT','RH_FOOT']
+
+
+         feet_names = ['LF_FOOT', 'LH_FOOT', 'RF_FOOT', 'RH_FOOT']
+
          
     """
 
     class terrain(AnymalCRoughCfg.terrain):
         mesh_type = 'plane'
         measure_heights = False
+
 
 
     class control(AnymalCRoughCfg.control ):
@@ -143,21 +156,33 @@ class AnymalCFlatCfg(AnymalCRoughCfg):
     class rewards(AnymalCRoughCfg.rewards):
         max_contact_force = 350.
         only_positive_rewards = False
+        tracking_sigma = 1.0
 
         class scales(AnymalCRoughCfg.rewards.scales):
             orientation = -5.0
             torques = -0.000025
             feet_air_time = 2.
-            synchronous = 2.0
-            phase = 0.7
+            stand_still = -2.
+            tracking_lin_vel = 1.0
+
+
+            synchronous = 0.0005
+            phase = 0.0005
+
+            joint_regularization = 0.0
             # feet_contact_forces = -0.01
 
     class commands(AnymalCRoughCfg.commands):
-        heading_command = False
+        num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
         resampling_time = 4.
+        heading_command = False
 
-        class ranges(AnymalCRoughCfg.commands.ranges):
-            ang_vel_yaw = [-1.5, 1.5]
+        class ranges:
+            lin_vel_x = [-0.4, -0.0]  # min max [m/s]
+            lin_vel_y = [0, 0]  # min max [m/s]
+            ang_vel_yaw = [0, 0]  # min max [rad/s]
+            heading = [-3.14, 3.14]
+
 
     class domain_rand(AnymalCRoughCfg.domain_rand):
         friction_range = [0., 1.5]  # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.

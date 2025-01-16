@@ -80,8 +80,7 @@ class Anymal(LeggedRobot):
 
         # Helper function to compute P(A_i < f < B_i)
         def compute_phase_probability(phi, theta):
-            phi_values_a = torch.linspace(theta - 0.5, theta + 0.5, steps=101, device=self.device).repeat(self.num_envs,
-                                                                                                          1)
+            phi_values_a = torch.linspace(theta - 0.5, theta + 0.5, steps=101, device=self.device).repeat(self.num_envs,1)
             phi_values_b = torch.linspace(theta, theta + 1, steps=101, device=self.device).repeat(self.num_envs, 1)
 
             von_mises_a = torch.exp(kappa * (torch.cos(2 * math.pi * (phi_values_a - theta))))
@@ -126,14 +125,14 @@ class Anymal(LeggedRobot):
 
         # Contact forces and speeds for each foot
         left_front_foot_forces = self.contact_forces[:, self.feet_indices[0], 2]
-        right_front_foot_forces = self.contact_forces[:, self.feet_indices[1], 2]
-        left_hind_foot_forces = self.contact_forces[:, self.feet_indices[2], 2]
+        left_hind_foot_forces = self.contact_forces[:, self.feet_indices[1], 2]
+        right_front_foot_forces = self.contact_forces[:, self.feet_indices[2], 2]
         right_hind_foot_forces = self.contact_forces[:, self.feet_indices[3], 2]
 
         #### if not accurate, use jacobian ####
         left_front_foot_speeds = torch.abs(self.dof_vel[:, 2])
-        right_front_foot_speeds = torch.abs(self.dof_vel[:, 5])
-        left_hind_foot_speeds = torch.abs(self.dof_vel[:, 8])
+        left_hind_foot_speeds = torch.abs(self.dof_vel[:, 5])
+        right_front_foot_speeds = torch.abs(self.dof_vel[:, 8])
         right_hind_foot_speeds = torch.abs(self.dof_vel[:, 11])
 
 
@@ -181,4 +180,54 @@ class Anymal(LeggedRobot):
             return torques
         else:
             # pd controller
-            return super()._compute_torques(actions)    
+            return super()._compute_torques(actions)
+
+    def _reward_joint_regularization(self):
+        # Reward joint poses and symmetry
+        error = 0.
+        # LF-RH 대칭성
+        error += self.sqrdexp(
+            (self.dof_pos[:, 0] - self.dof_pos[:, 9])  # LF와 RH
+            / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp(
+            (self.dof_pos[:, 1] - self.dof_pos[:, 10])  # LF와 RH
+            / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp(
+            (self.dof_pos[:, 2] - self.dof_pos[:, 11])  # LF와 RH
+            / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp(
+            (self.dof_vel[:, 0] - self.dof_vel[:, 9])  # LF와 RH 속도
+            / self.cfg.normalization.obs_scales.dof_vel)
+        error += self.sqrdexp(
+            (self.dof_vel[:, 1] - self.dof_vel[:, 10])  # LF와 RH 속도
+            / self.cfg.normalization.obs_scales.dof_vel)
+        error += self.sqrdexp(
+            (self.dof_vel[:, 2] - self.dof_vel[:, 11])  # LF와 RH 속도
+            / self.cfg.normalization.obs_scales.dof_vel)
+
+        # RF-LH 대칭성
+        error += self.sqrdexp(
+            (self.dof_pos[:, 3] - self.dof_pos[:, 6])  # RF와 LH
+            / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp(
+            (self.dof_pos[:, 4] - self.dof_pos[:, 7])  # RF와 LH
+            / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp(
+            (self.dof_pos[:, 5] - self.dof_pos[:, 8])  # RF와 LH
+            / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp(
+            (self.dof_vel[:, 3] - self.dof_vel[:, 6])  # RF와 LH 속도
+            / self.cfg.normalization.obs_scales.dof_vel)
+        error += self.sqrdexp(
+            (self.dof_vel[:, 4] - self.dof_vel[:, 7])  # RF와 LH 속도
+            / self.cfg.normalization.obs_scales.dof_vel)
+        error += self.sqrdexp(
+            (self.dof_vel[:, 5] - self.dof_vel[:, 8])  # RF와 LH 속도
+            / self.cfg.normalization.obs_scales.dof_vel)
+
+        return error
+
+    def sqrdexp(self, x):
+        """ shorthand helper for squared exponential
+        """
+        return torch.exp(-torch.square(x)/self.cfg.rewards.tracking_sigma)
